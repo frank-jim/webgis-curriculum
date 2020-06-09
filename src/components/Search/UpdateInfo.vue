@@ -1,6 +1,10 @@
 <template>
-    <el-dialog title="更新详细信息" :visible.sync="dialogShow" center>
+    <el-dialog title="更新详细信息" :visible.sync="dialogShow" center class="updateinfodialog">
         <el-form :model="CityInfo">
+            <el-row>
+                <div class="line"></div>
+            </el-row>
+
             <el-form-item label="城市名称:" :label-width="formlabelWidth" >
                 <el-input v-model="CityInfo.name" autocomplete="off" ></el-input>
             </el-form-item>
@@ -25,8 +29,15 @@
                 <div class="line"></div>
             </el-row>
 
-            <el-form-item label="活动名称:" :label-width="formlabelWidth">
-                <el-input v-model="CityInfo.name" autocomplete="off" ></el-input>
+            <el-form-item label="城市类型:" :label-width="formlabelWidth">
+                <el-select v-model="cityType" placeholder="城市类型">
+                    <el-option
+                            v-for="item in cityTypeOptions"
+                            :key="item.value"
+                            :label="item.label"
+                            :value="item.value">
+                    </el-option>
+                </el-select>
             </el-form-item>
             <el-row>
                 <div class="line"></div>
@@ -41,14 +52,14 @@
                 <el-col :span="1" :offset="1">
                     <el-image :src="locate_info" fit="scale-down" class="locate_img" ></el-image>
                 </el-col>
-                <el-col :span="1">X:</el-col>
+                <el-col :span="1" style="font-family: 'Bodoni Bd BT';font-size: 20px">X:</el-col>
                 <el-col :span="4">
                     <el-input v-model="CityInfo.coords[0]" autocomplete="off" ></el-input>
                 </el-col>
                 <el-col :span="1" :offset="2">
                     <el-image :src="locate_info" fit="scale-down" class="locate_img" ></el-image>
                 </el-col>
-                <el-col :span="1">Y:</el-col>
+                <el-col :span="1" style="font-family: 'Bodoni Bd BT';font-size: 20px">Y:</el-col>
                 <el-col :span="4">
                     <el-input v-model="CityInfo.coords[1]" autocomplete="off" ></el-input>
                 </el-col>
@@ -58,17 +69,33 @@
                 <div class="line"></div>
             </el-row>
 
-            <el-row type="flex" align="middle" style="margin-top: 30px">
-                城市图片:
-                <el-image :src="CityInfo.cityImage" fit="scale-down" class="cityimage" ></el-image>
+            <el-row type="flex" align="middle" >
+                <el-col :span="3" :offset="1">城市图片:</el-col>
+                <el-col :span="8">
+                    <el-image :src="CityInfo.cityImage" fit="scale-down" class="cityimage" ></el-image>
+                </el-col>
+                <el-col :span="8" :offset="2">
+                    <el-upload :auto-upload="false"
+                               action="#"
+                               :on-preview="handlePreview"
+                               :on-remove="handleRemove"
+                               :before-remove="beforeRemove"
+                               list-type="picture-card"
+                               :limit="3">
+                        <i class="el-icon-plus"></i>
+                    </el-upload>
+                    <el-dialog :visible.sync="PreImageDialog">
+                        <img width="100%" :src="PreImageUrl" alt="">
+                    </el-dialog>
+                </el-col>
             </el-row>
         </el-form>
-        <el-row style="margin: 5px">
+        <el-row style="margin: 2px;height: 1px">
             <div class="line"></div>
         </el-row>
         <span slot="footer" class="dialog-footer">
-            <el-button >取 消</el-button>
-            <el-button style="margin-left: 150px">提交</el-button>
+            <el-button type="info" >取 消</el-button>
+            <el-button type="success" style="margin-left: 150px">提交</el-button>
         </span>
     </el-dialog>
 </template>
@@ -80,7 +107,7 @@
         name: "UpdateInfo",
         data(){
             return{
-                dialogShow:true,
+                dialogShow:false,
                 CityInfo:{
                     name:"这是城市名称",
                     code:5555,
@@ -90,7 +117,69 @@
                 },
                 formlabelWidth:"100px",
                 locate_info:locate_info,
-                locateTip:"点击这里到地图上去寻点"
+                locateTip:"点击这里到地图上去寻点",
+                PreImageDialog:false,
+                PreImageUrl:'',
+                ImageFile:"",
+                cityType:1,
+                cityTypeOptions: [{
+                    value: 1,
+                    label: "首都"
+                }, {
+                    value: 2,
+                    label: '省会'
+                }, {
+                    value: 3,
+                    label: '城市'
+                }, {
+                    value: 9,
+                    label: '特别行政区'
+                }]
+            }
+        },
+        computed:{
+            // cityType(){
+            //     if(this.adclass===2){
+            //         return "省会"
+            //     }else if(this.adclass===1){
+            //         return "首都"
+            //     }else if(this.adclass===9){
+            //         return "特别行政区"
+            //     }else {
+            //         return "城市"
+            //     }
+            // }
+        },
+        methods:{
+            //三个函数处理当前用户的上传操作
+            submitUpload() {
+                this.$refs.upload.submit();
+            },
+            handleRemove(file, fileList) {
+                this.ImageFile = "";
+                console.log(file, fileList);
+            },
+            handlePreview(file) {
+                //这个判断放到实际发送请求的时候再来进行
+                // const isJPG = file.type === 'image/jpeg';
+                // const isLt2M = file.size / 1024 / 1024 < 2;
+                //
+                // if (!isJPG) {
+                //     this.$message.error('上传头像图片只能是 JPG 格式!');
+                //     return ;
+                // }
+                // if (!isLt2M) {
+                //     this.$message.error('上传头像图片大小不能超过 2MB!');
+                //     return ;
+                // }
+
+                console.log(file);
+                this.PreImageUrl = file.url;
+                this.PreImageDialog = true;
+                this.ImageFile = file;
+            },
+            beforeRemove(file, fileList) {
+                return this.$confirm(`确定移除 ${ file.name }？`);
             }
         }
     }
@@ -112,16 +201,16 @@
         width: 22px;
     }
     .cityimage{
-        height: 200px;
-        width: 350px;
+
     }
     .line{
         width: 100%;
         height: 3px;
         border-top: solid #242424 1px;
     }
-    .el-dialog__body{
-        padding: 2px;
+    .updateinfodialog >>>.el-dialog__body{
+        padding: 0px 10px 10px;
+
     }
     .el-form-item{
         margin-bottom: 3px;
@@ -132,7 +221,20 @@
     .el-input{
         border: #E9EEF3;
     }
-    .el-dialog__footer{
-        padding: 10px;
+    .updateinfodialog >>> .el-dialog__footer{
+        padding: 5px;
+    }
+    .updateinfodialog >>> .el-dialog__header{
+        padding: 5px;
+    }
+    .updateinfodialog >>>.el-dialog{
+        margin-top: 30px!important;
+        margin-left: 450px;
+        background-color: #ccebfc;
+        border-radius: 10px;
+
+    }
+    .updateinfodialog{
+        z-index: 8;
     }
 </style>
