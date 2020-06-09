@@ -2,7 +2,7 @@
     <div id="searchView">
         <SearchBar @SearchInfo="getSearchInfo" ></SearchBar>
         <SearchInfo v-if="showInfo" :id="featureid" ref="info"></SearchInfo>
-        <UpdateInfo></UpdateInfo>
+        <UpdateInfo :visible="updateInfo" ref="update"></UpdateInfo>
     </div>
 </template>
 
@@ -20,14 +20,14 @@
         data(){
             return{
                 featureid:0,
-                showInfo:false
+                showInfo:false,
+                updateInfo:false
             }
         },
         methods:{
             getSearchInfo(item){
                 //发送详细信息的搜索
                 this.featureid = parseInt(item.id);
-                console.log("View ++ item"+"++++++++++++"+this.featureid);
                 if (this.showInfo){
                     this.$refs['info'].changeInfo();
                 }

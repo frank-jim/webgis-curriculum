@@ -37,13 +37,16 @@
             <el-row>
                 <el-col :span="10" :offset="2" style="height: 30px">
                     <el-tooltip :content="logininfo" placement="top" :disabled="this.$store.state.login" >
-                        <el-button  type="text" class="button delete">删除</el-button>
+                        <el-button  type="text" class="button delete"
+                                    >删除
+                        </el-button>
                     </el-tooltip>
 
                 </el-col>
                 <el-col :span="10" style="height: 30px">
                     <el-tooltip :content="logininfo" placement="top" :disabled="this.$store.state.login" >
-                        <el-button  type="text" class="button update" >更新</el-button>
+                        <el-button  type="text" class="button update" @click="updateInfo"
+                                     >更新</el-button>
                     </el-tooltip>
                 </el-col>
             </el-row>
@@ -67,6 +70,7 @@
                 cityinfo:"城市内容",
                 cityImage:null,
                 pinyin:"chengshi",
+                itemInfo:""
             }
         },
         computed:{
@@ -102,11 +106,14 @@
                 let feature = geojson.features[0];
                 console.log(feature);
                 let properties = feature.properties;
-                console.log(properties);
                 this.cityname = properties.name;
                 this.cityinfo = properties.intro;
                 this.cityImage = properties.image;
                 this.citycoords = feature.geometry.coordinates;
+                this.pinyin = properties.pinyin;
+                this.adclass = parseInt(properties.adclass);
+
+                //页面跳转
                 this.$parent.$parent.$refs["mapview"].JumpToLocal(this.citycoords);
             },
             changeInfo(){
@@ -123,10 +130,19 @@
                 }).then((res)=>{
                     //请求成功
                     let geojson = JSON.parse(res.data.data.geojson);
+                    this.itemInfo = geojson;
                     this.createInfo(geojson);
                     console.log(this.id);
                 })
             },
+            updateInfo(){
+                // if(!this.$store.state.login){
+                //     return;
+                // }
+                //弹窗更新
+                this.$parent.$refs['update'].dialogShow = true;
+                this.$parent.$refs['update'].setInfo(this.itemInfo);
+            }
 
         },
         created() {

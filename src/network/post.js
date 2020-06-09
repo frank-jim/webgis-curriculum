@@ -7,7 +7,7 @@
          //发送请求的默认端口，之后可以进行修改,
          method:"post",
          headers:{
-           "Content-Type":"application/x-www-form-urlencoded; charset=UTF-8"
+           "Content-Type":"application/json; charset=UTF-8"
          },
          baseURL:"http://localhost:5858/WebGIS_Practicum_war_exploded"
      });

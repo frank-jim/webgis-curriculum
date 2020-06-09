@@ -1,5 +1,5 @@
 <template>
-    <el-dialog title="更新详细信息" :visible.sync="dialogShow" center class="updateinfodialog">
+    <el-dialog title="更新详细信息" :visible.sync="dialogShow" center class="updateinfodialog" :modal="false">
         <el-form :model="CityInfo">
             <el-row>
                 <div class="line"></div>
@@ -30,7 +30,7 @@
             </el-row>
 
             <el-form-item label="城市类型:" :label-width="formlabelWidth">
-                <el-select v-model="cityType" placeholder="城市类型">
+                <el-select v-model="CityInfo.cityType" placeholder="城市类型">
                     <el-option
                             v-for="item in cityTypeOptions"
                             :key="item.value"
@@ -53,14 +53,14 @@
                     <el-image :src="locate_info" fit="scale-down" class="locate_img" ></el-image>
                 </el-col>
                 <el-col :span="1" style="font-family: 'Bodoni Bd BT';font-size: 20px">X:</el-col>
-                <el-col :span="4">
+                <el-col :span="5">
                     <el-input v-model="CityInfo.coords[0]" autocomplete="off" ></el-input>
                 </el-col>
                 <el-col :span="1" :offset="2">
                     <el-image :src="locate_info" fit="scale-down" class="locate_img" ></el-image>
                 </el-col>
                 <el-col :span="1" style="font-family: 'Bodoni Bd BT';font-size: 20px">Y:</el-col>
-                <el-col :span="4">
+                <el-col :span="5">
                     <el-input v-model="CityInfo.coords[1]" autocomplete="off" ></el-input>
                 </el-col>
             </el-row>
@@ -80,8 +80,9 @@
                                :on-preview="handlePreview"
                                :on-remove="handleRemove"
                                :before-remove="beforeRemove"
+                               :file-list="ImageList"
                                list-type="picture-card"
-                               :limit="3">
+                               :limit="1" :http-request="showImage" ref="upload">
                         <i class="el-icon-plus"></i>
                     </el-upload>
                     <el-dialog :visible.sync="PreImageDialog">
@@ -94,8 +95,8 @@
             <div class="line"></div>
         </el-row>
         <span slot="footer" class="dialog-footer">
-            <el-button type="info" >取 消</el-button>
-            <el-button type="success" style="margin-left: 150px">提交</el-button>
+            <el-button type="info" @click="cancelUpdate" >取 消</el-button>
+            <el-button type="success" @click="uploadInfo"  style="margin-left: 150px">提交</el-button>
         </span>
     </el-dialog>
 </template>
@@ -103,25 +104,30 @@
 <script>
     import guangzhou from '../../assets/image/guangzhou.jpg'
     import locate_info from '../../assets/image/locate_info.png'
+    import {post} from "../../network/post";
+
     export default {
         name: "UpdateInfo",
         data(){
             return{
                 dialogShow:false,
                 CityInfo:{
-                    name:"这是城市名称",
-                    code:5555,
-                    intro:"别称江城，是湖北省省会，中部六省唯一的副省级市，特大城市，国务院批复确定的中国中部地区的中心城市，全国重要的工业基地、科教基地和综合交通枢纽。截至2019年末，全市下辖13个区，总面积8569.15平方千米，建成区面积812.39平方千米，常住人口1121.2万人，地区生产总值1.62万亿",
+                    name:null,
+                    code:null,
+                    intro:"",
                     coords:[1.2,2.3],
-                    cityImage:guangzhou
+                    cityImage:"",
+                    cityType:null,
+                    pinyin:null
                 },
+                ImageList:[],
                 formlabelWidth:"100px",
                 locate_info:locate_info,
                 locateTip:"点击这里到地图上去寻点",
                 PreImageDialog:false,
+                //上传的文件 base64
                 PreImageUrl:'',
                 ImageFile:"",
-                cityType:1,
                 cityTypeOptions: [{
                     value: 1,
                     label: "首都"
@@ -134,7 +140,9 @@
                 }, {
                     value: 9,
                     label: '特别行政区'
-                }]
+                }],
+                featureId:null,
+                uploadimage:false
             }
         },
         computed:{
@@ -156,7 +164,6 @@
                 this.$refs.upload.submit();
             },
             handleRemove(file, fileList) {
-                this.ImageFile = "";
                 console.log(file, fileList);
             },
             handlePreview(file) {
@@ -173,13 +180,135 @@
                 //     return ;
                 // }
 
-                console.log(file);
                 this.PreImageUrl = file.url;
                 this.PreImageDialog = true;
-                this.ImageFile = file;
             },
             beforeRemove(file, fileList) {
+                console.log(file, fileList);
                 return this.$confirm(`确定移除 ${ file.name }？`);
+            },
+            setInfo(item){
+                console.log("更新请求已收到");
+                this.createInfo(item)
+            },
+            createInfo(geojson){
+                let feature = geojson.features[0];
+                let properties = feature.properties;
+                this.CityInfo.name = properties.name;
+                this.CityInfo.intro = properties.intro;
+                this.CityInfo.cityImage = properties.image;
+                this.CityInfo.coords = feature.geometry.coordinates;
+                this.CityInfo.pinyin = properties.pinyin;
+                this.CityInfo.cityType = parseInt(properties.adclass);
+                this.CityInfo.code = properties.adcode99;
+                this.featureId = properties.id;
+            },
+            cancelUpdate(){
+                this.dialogShow = false;
+            },
+            uploadInfo(){
+                // this.$refs['upload'].submit();
+                //查找是否上传图片,这个是文件
+
+                let file = this.$refs['upload'].uploadFiles;
+                if(file.length>0){
+                    console.log(file[0].raw);
+                    this.loadPromise(file[0].raw).then((res)=>{
+                        this.ImageFile = res;
+                        console.log(this.uploadimage);
+                        console.log("开始上传信息");
+                        console.log("1");
+                        post({
+                            url:"./UpdateInfoServlet",
+                            data:{
+                                id:this.featureId,
+                                name:encodeURI(this.CityInfo.name),
+                                intro:encodeURI(this.CityInfo.intro),
+                                pinyin:this.CityInfo.pinyin,
+                                adcode99:this.CityInfo.code,
+                                coordinates:this.CityInfo.coords,
+                                image:this.CityInfo.cityImage,
+                                adclass:this.CityInfo.cityType
+                            }
+                        }).then((res)=>{
+                            this.updateAfter(res);
+                        }).catch((res)=>{
+                            console.log(res);
+                        })
+                    })
+                }else
+                    {
+                    post({
+                        url:"./UpdateInfoServlet",
+                        data:{
+                            id:this.featureId,
+                            name:encodeURI(this.CityInfo.name),
+                            intro:encodeURI(this.CityInfo.intro),
+                            pinyin:this.CityInfo.pinyin,
+                            adcode99:this.CityInfo.code,
+                            coordinates:this.CityInfo.coords,
+                            image:this.CityInfo.cityImage,
+                            adclass:this.CityInfo.cityType
+                        }
+                    }).then((res)=>{
+                        this.updateAfter(res);
+                    }).catch((res)=>{
+                        console.log(res);
+                    })
+                }
+            },
+            showImage(item){
+                this.loadPromise(item).then((res)=>{
+                    this.ImageFile = res;
+                    post({
+                        url:"./UpdateInfoServlet",
+                        data:{
+                            id:this.featureId,
+                            name:encodeURI(this.CityInfo.name),
+                            intro:encodeURI(this.CityInfo.intro),
+                            pinyin:this.CityInfo.pinyin,
+                            adcode99:this.CityInfo.code,
+                            coordinates:this.CityInfo.coords,
+                            image:this.ImageFile,
+                            adclass:this.CityInfo.cityType
+                        }
+                    }).then((res)=>{
+                        this.updateAfter(res);
+                    }).catch((res)=>{
+                        console.log(res);
+                    })
+                });
+                this.uploadimage = false;
+            },
+            loadPromise(item){
+                return new Promise(((resolve, reject) => {
+                    let file = item;
+                    if(file!=null){
+                        let reader = new FileReader();
+                        reader.readAsDataURL(file);
+                        //reader.onload 是文件加载完成之后需要调用的函数，如何来进行异步加载？
+                        reader.onload = function (e) {
+                            resolve(reader.result);
+                        }
+                    }else {
+                        reject();
+                    }
+                }));
+            },
+            updateAfter(res){
+                if(res.data.status===200){
+                    let geojson = res.data.data.geojson;
+                    this.createInfo(JSON.parse(geojson));
+                    this.$message({
+                        message: '城市信息修改成功',
+                        type: 'success'
+                    });
+                }else {
+                    this.$message({
+                        message:"信息修改失败，请检查后重新修改",
+                        type:"error"
+                    })
+                }
             }
         }
     }
@@ -225,7 +354,7 @@
         padding: 5px;
     }
     .updateinfodialog >>> .el-dialog__header{
-        padding: 5px;
+        padding: 10px;
     }
     .updateinfodialog >>>.el-dialog{
         margin-top: 30px!important;
