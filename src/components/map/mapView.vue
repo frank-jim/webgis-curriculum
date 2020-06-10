@@ -1,5 +1,13 @@
 <template>
     <div id="map">
+        <div id="popup" class="ol-popup">
+            <a href="#" id="popup-closer" class="ol-popup-closer"></a>
+            <div id="popup-content">
+                <code>
+                    {{ctrPoint}}
+                </code>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -14,6 +22,7 @@
     import {highlightStyle,styleVector,createLabelStyle} from "./map_style"
     import {Point} from "ol/geom"
     import { GeoJSON } from 'ol/format'
+    import  Overlay  from 'ol/Overlay'
 
     import geojson1 from "@/assets/data/GeoJSON_HB.json"
     import {FullScreen,ZoomSlider,ZoomToExtent} from "ol/control"
@@ -27,10 +36,14 @@
                     135.08583068847656, 53.557926177978516],
                 mapView:null,
                 pro:null,
-                maxZoom:15,
-                minZoom:4,
+                maxZoom:16,
+                minZoom:3,
                 vectorSource:null,
-                vectorLayer:null
+                vectorLayer:null,
+                handPoint : false,
+                ctrPress:false,
+                ctrPoint:null,
+                overlay:null
             }
         },
         created() {
@@ -137,6 +150,8 @@
                  * @type {null}
                  */
 
+                this.getPoint();
+
                 let selected = null;
                 this.map.on('pointermove', (e)=>{
                     if (selected !== null) {
@@ -146,7 +161,16 @@
                         //要素被样式被修改过
                         this.map.getTargetElement().style.cursor="auto"
                     }
-
+//---------------------------展示坐标信息 ----------------------------------//
+                    if(this.ctrPress&&this.handPoint){
+                        let pixel = this.map.getEventPixel(e.originalEvent);
+                        let coord = this.map.getCoordinateFromPixel(pixel);
+                        this.ctrPoint = coord;
+                        this.overlay.setPosition(coord);
+                    }
+                    else {
+                        this.overlay.setPosition(undefined);
+                    }
                     this.map.forEachFeatureAtPixel(e.pixel, (f)=>{
                         if(f.style_!=null){
                             this.map.getTargetElement().style.cursor="pointer"
@@ -159,9 +183,10 @@
                         }
                     });
                 });
+
             },
             JumpToLocal(coord){
-                //动画，变位更联系
+                //动画，变位更连贯
                 // this.mapView.setCenter(coord);
                 // this.mapView.setZoom(6);
                 this.mapView.animate({ // 只设置需要的属性即可
@@ -169,6 +194,41 @@
                     zoom: 6, // 缩放级别
                     rotation: undefined, // 缩放完成view视图旋转弧度
                     duration: 1000 // 缩放持续时间，默认不需要设置
+                })
+            },
+            getPoint(){
+                //坐标显示层
+                this.overlay = new Overlay({
+                    element: document.getElementById("popup"),
+                    autoPan: true,
+                    autoPanAnimation: {
+                        duration: 250
+                    }
+                });
+                this.map.addOverlay(this.overlay);
+                //crosshair 光标十字线 开启地图取点功能
+                document.onkeydown = (e)=> {
+                    if(e.keyCode===17&&this.handPoint){
+                        this.ctrPress = true;
+                        this.map.getTargetElement().style.cursor="crosshair"
+                    }
+                }
+                document.onkeyup = (e)=>{
+                    this.map.getTargetElement().style.cursor="auto"
+                    if(e.keyCode===17){
+                        this.ctrPress = false;
+                    }
+                }
+                this.map.on("singleclick",(e)=>{
+                    if(this.ctrPress&&this.handPoint){
+                        let pixel = this.map.getEventPixel(e.originalEvent);
+                        let coord = this.map.getCoordinateFromPixel(pixel);
+                        this.ctrPoint = coord;
+                        //得到点击坐标，进行返回
+                        this.$parent.$refs['search-view'].$refs['update'].HandleCoords(coord);
+                        this.handPoint = false;
+                        console.log(coord);
+                    }
                 })
             }
 
@@ -182,5 +242,16 @@
         height: 100%;
         width: 100%;
         z-index: 1;
+    }
+    .ol-popup {
+        position: absolute;
+        background-color: white;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+        padding: 15px;
+        border-radius: 10px;
+        border: 1px solid #cccccc;
+        bottom: 12px;
+        left: -50px;
+        min-width: 280px;
     }
 </style>

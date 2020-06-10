@@ -37,7 +37,7 @@
             <el-row>
                 <el-col :span="10" :offset="2" style="height: 30px">
                     <el-tooltip :content="logininfo" placement="top" :disabled="this.$store.state.login" >
-                        <el-button  type="text" class="button delete"
+                        <el-button  type="text" class="button delete" @click="deleteIdentify = true"
                                     >删除
                         </el-button>
                     </el-tooltip>
@@ -51,6 +51,17 @@
                 </el-col>
             </el-row>
         </el-footer>
+        <el-dialog
+                title="警告"
+                :visible.sync="deleteIdentify"
+                width="30%"
+                center>
+            <span>确认要删除该要素吗？(此操作将不可逆)</span>
+            <span slot="footer" class="dialog-footer">
+            <el-button @click="deleteIdentify=false" type="info">取 消</el-button>
+            <el-button type="danger" @click="DeleteCity">删除</el-button>
+          </span>
+        </el-dialog>
     </el-container>
 </template>
 
@@ -70,7 +81,8 @@
                 cityinfo:"城市内容",
                 cityImage:null,
                 pinyin:"chengshi",
-                itemInfo:""
+                itemInfo:"",
+                deleteIdentify:false
             }
         },
         computed:{
@@ -142,8 +154,27 @@
                 //弹窗更新
                 this.$parent.$refs['update'].dialogShow = true;
                 this.$parent.$refs['update'].setInfo(this.itemInfo);
+            },
+            DeleteCity(){
+                this.deleteIdentify = false;
+                post({
+                    url:"./UpdateInfoServlet",
+                    data:{
+                        id:this.id
+                    },
+                    params:{
+                        type:"3"
+                    }
+                }).then((res)=>{
+                    if(res.data.status==200){
+                        this.$message({
+                            message:"要素删除成功",
+                            type:"success",
+                            center:true
+                        })
+                    }
+                })
             }
-
         },
         created() {
             //在生成之间，这里需要对信息进行填充

@@ -1,12 +1,15 @@
 <template>
     <el-card>
         <div slot="header" class="clearfix">
-            <span style="margin-left: 20px">登录信息</span>
+            <span style="margin-left: 10px">登录信息</span>
+
             <el-button style="float: right; padding: 3px 0" type="text" @click="login_btn" >{{setLoginBtn()}}</el-button>
         </div>
-        <el-row type="flex" align="middle">
-            <el-col :span="10" style="height: 50px" :offset="1">
-                    <img :src="getLoginImg()" class="user_info_img"/>
+        <el-row type="flex" align="middle" style="height: 60px">
+            <el-col :span="10"  :offset="2">
+                <el-tooltip class="item" effect="light" :content="createTips" placement="top" >
+                    <el-button type="warning"  icon="el-icon-edit" circle @click="CreateNewFeature"></el-button>
+                </el-tooltip>
             </el-col>
             <el-col :span="13" >
                 <div class="user_info">
@@ -34,6 +37,15 @@
                 logintime:"",
                 interval:""
             }
+        },
+        computed:{
+          createTips(){
+              if(this.$store.state.login){
+                  return "点我添加新城市"
+              }else {
+                  return "当前用户未登录，请登录后进行编辑"
+              }
+          }
         },
         methods:{
             getLoginImg(){
@@ -93,6 +105,16 @@
                     console.log(day+":"+hours+":"+minutes+":"+seconds);
                     this.interval = day+":"+hours+":"+minutes+":"+seconds;
                 }
+            },
+            CreateNewFeature(){
+                this.$message({
+                    message: '请按下ctr键 和鼠标 从地图上获得你需要的坐标点 ',
+                    center: true,
+                    type:"success"
+                });
+                this.$parent.$parent.$refs['mapview'].handPoint = true;
+                this.$parent.$parent.$refs['search-view'].$refs['update'].clearInfo();
+                this.$parent.$parent.$refs['search-view'].$refs['update'].isCreateNew = true;
             }
         },
         mounted() {
@@ -128,8 +150,8 @@
         margin-right: 20px;
     }
     .user_info_img{
-        height: 50px;
-        width: 50px;
-        border-radius: 25px;
+        height: 40px;
+        width: 40px;
+        border-radius: 20px;
     }
 </style>

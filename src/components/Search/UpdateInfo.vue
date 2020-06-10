@@ -30,14 +30,25 @@
             </el-row>
 
             <el-form-item label="城市类型:" :label-width="formlabelWidth">
-                <el-select v-model="CityInfo.cityType" placeholder="城市类型">
-                    <el-option
-                            v-for="item in cityTypeOptions"
-                            :key="item.value"
-                            :label="item.label"
-                            :value="item.value">
-                    </el-option>
-                </el-select>
+                <el-row type="flex" align="middle">
+                    <el-col :span="10">
+                        <el-select v-model="CityInfo.cityType" placeholder="城市类型">
+                            <el-option
+                                    v-for="item in cityTypeOptions"
+                                    :key="item.value"
+                                    :label="item.label"
+                                    :value="item.value">
+                            </el-option>
+                        </el-select>
+                    </el-col>
+                    <el-col :span="3">
+                        <label>城市拼音:</label>
+                    </el-col>
+                    <el-col :span="8">
+                        <el-input v-model="CityInfo.pinyin" autocomplete="off" ></el-input>
+                    </el-col>
+                </el-row>
+
             </el-form-item>
             <el-row>
                 <div class="line"></div>
@@ -46,7 +57,7 @@
             <el-row type="flex" align="middle" style="margin-bottom: 3px">
                 <el-col :span="2" :offset="2">
                     <el-tooltip :content="locateTip" placement="top" effect="light">
-                        <el-button circle type="success" icon="el-icon-thumb"></el-button>
+                        <el-button circle type="success" icon="el-icon-thumb" @click="JumpToGetPoint" ></el-button>
                     </el-tooltip>
                 </el-col>
                 <el-col :span="1" :offset="1">
@@ -142,7 +153,9 @@
                     label: '特别行政区'
                 }],
                 featureId:null,
-                uploadimage:false
+
+                //是否为新添加的对象
+                isCreateNew:false
             }
         },
         computed:{
@@ -192,6 +205,11 @@
                 this.createInfo(item)
             },
             createInfo(geojson){
+
+                //通过geojson传递数据的，一定不是新添加的
+                this.isCreateNew = false;
+
+                this.clearInfo();
                 let feature = geojson.features[0];
                 let properties = feature.properties;
                 this.CityInfo.name = properties.name;
@@ -204,20 +222,43 @@
                 this.featureId = properties.id;
             },
             cancelUpdate(){
+                this.isCreateNew = false;
                 this.dialogShow = false;
             },
             uploadInfo(){
                 // this.$refs['upload'].submit();
                 //查找是否上传图片,这个是文件
-
-                let file = this.$refs['upload'].uploadFiles;
-                if(file.length>0){
-                    console.log(file[0].raw);
-                    this.loadPromise(file[0].raw).then((res)=>{
-                        this.ImageFile = res;
-                        console.log(this.uploadimage);
-                        console.log("开始上传信息");
-                        console.log("1");
+                if(!this.isCreateNew){
+                    //是更新信息而不是添加信息
+                    let file = this.$refs['upload'].uploadFiles;
+                    if(file.length>0){
+                        this.loadPromise(file[0].raw).then((res)=>{
+                            this.CityInfo.cityImage = res;
+                            console.log("开始上传信息");
+                            console.log("1");
+                            post({
+                                url:"./UpdateInfoServlet",
+                                data:{
+                                    id:this.featureId,
+                                    name:encodeURI(this.CityInfo.name),
+                                    intro:encodeURI(this.CityInfo.intro),
+                                    pinyin:this.CityInfo.pinyin,
+                                    adcode99:this.CityInfo.code,
+                                    coordinates:this.CityInfo.coords,
+                                    image:this.CityInfo.cityImage,
+                                    adclass:this.CityInfo.cityType
+                                },
+                                params:{
+                                    type:"2"
+                                }
+                            }).then((res)=>{
+                                this.updateAfter(res);
+                            }).catch((res)=>{
+                                console.log(res);
+                            })
+                        })
+                    }else
+                    {
                         post({
                             url:"./UpdateInfoServlet",
                             data:{
@@ -229,37 +270,74 @@
                                 coordinates:this.CityInfo.coords,
                                 image:this.CityInfo.cityImage,
                                 adclass:this.CityInfo.cityType
+                            },
+                            params:{
+                                type:"2"
                             }
                         }).then((res)=>{
                             this.updateAfter(res);
                         }).catch((res)=>{
                             console.log(res);
                         })
-                    })
-                }else
-                    {
-                    post({
-                        url:"./UpdateInfoServlet",
-                        data:{
-                            id:this.featureId,
-                            name:encodeURI(this.CityInfo.name),
-                            intro:encodeURI(this.CityInfo.intro),
-                            pinyin:this.CityInfo.pinyin,
-                            adcode99:this.CityInfo.code,
-                            coordinates:this.CityInfo.coords,
-                            image:this.CityInfo.cityImage,
-                            adclass:this.CityInfo.cityType
-                        }
-                    }).then((res)=>{
-                        this.updateAfter(res);
-                    }).catch((res)=>{
-                        console.log(res);
-                    })
+                    }
                 }
+                else {
+                    //添加新要素
+                    //是更新信息而不是添加信息
+                    let file = this.$refs['upload'].uploadFiles;
+                    if(file.length>0){
+                        this.loadPromise(file[0].raw).then((res)=>{
+                            this.CityInfo.cityImage = res;
+                            console.log("开始上传信息");
+                            console.log("1");
+                            post({
+                                url:"./UpdateInfoServlet",
+                                data:{
+                                    name:encodeURI(this.CityInfo.name),
+                                    intro:encodeURI(this.CityInfo.intro),
+                                    pinyin:this.CityInfo.pinyin,
+                                    adcode99:this.CityInfo.code,
+                                    coordinates:this.CityInfo.coords,
+                                    image:this.CityInfo.cityImage,
+                                    adclass:this.CityInfo.cityType
+                                },
+                                params:{
+                                    type:"1"
+                                }
+                            }).then((res)=>{
+                                this.createAfter(res);
+                            }).catch((res)=>{
+                                console.log(res);
+                            })
+                        })
+                    }else
+                    {
+                        post({
+                            url:"./UpdateInfoServlet",
+                            data:{
+                                name:encodeURI(this.CityInfo.name),
+                                intro:encodeURI(this.CityInfo.intro),
+                                pinyin:this.CityInfo.pinyin,
+                                adcode99:this.CityInfo.code,
+                                coordinates:this.CityInfo.coords,
+                                image:this.CityInfo.cityImage,
+                                adclass:this.CityInfo.cityType
+                            },
+                            params:{
+                                type:"1"
+                            }
+                        }).then((res)=>{
+                            this.createAfter(res);
+                        }).catch((res)=>{
+                            console.log(res);
+                        })
+                    }
+                }
+
             },
             showImage(item){
                 this.loadPromise(item).then((res)=>{
-                    this.ImageFile = res;
+                    this.CityInfo.cityImage = res;
                     post({
                         url:"./UpdateInfoServlet",
                         data:{
@@ -278,11 +356,11 @@
                         console.log(res);
                     })
                 });
-                this.uploadimage = false;
             },
             loadPromise(item){
                 return new Promise(((resolve, reject) => {
                     let file = item;
+                    console.log(file);
                     if(file!=null){
                         let reader = new FileReader();
                         reader.readAsDataURL(file);
@@ -299,6 +377,7 @@
                 if(res.data.status===200){
                     let geojson = res.data.data.geojson;
                     this.createInfo(JSON.parse(geojson));
+                    this.$parent.$refs["info"].createInfo(JSON.parse(geojson));
                     this.$message({
                         message: '城市信息修改成功',
                         type: 'success'
@@ -309,6 +388,42 @@
                         type:"error"
                     })
                 }
+            },
+            createAfter(res){
+                if(res.data.status===200){
+                    this.$message({
+                        message: '城市添加修改成功',
+                        type: 'success'
+                    });
+                }else {
+                    this.$message({
+                        message:"添加城市失败，请检查后重新添加",
+                        type:"error"
+                    })
+                }
+            },
+            JumpToGetPoint(){
+                this.$message({
+                    message: '请按下ctr键 和鼠标 从地图上获得你需要的坐标点 ',
+                    center: true,
+                    type:"success"
+                });
+                this.$parent.$parent.$refs['mapview'].handPoint = true;
+                this.dialogShow = false;
+            },
+            HandleCoords(coords){
+                this.dialogShow = true;
+                this.CityInfo.coords = coords;
+            },
+            clearInfo(){
+                this.CityInfo.name = null;
+                this.CityInfo.intro = null;
+                this.CityInfo.cityImage = null;
+                this.CityInfo.coords = null;
+                this.CityInfo.pinyin = null;
+                this.CityInfo.cityType = null;
+                this.CityInfo.code = null;
+                this.featureId = null;
             }
         }
     }
