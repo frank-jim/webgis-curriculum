@@ -8,26 +8,33 @@
                 </code>
             </div>
         </div>
+        <heatslider/>
+        <route-plan-control/>
     </div>
 </template>
 
 
 <script>
     import {Map,View,Feature} from "ol"
-    import {Tile,Image,Vector as VectorLayer} from "ol/layer"
+    import {Tile,Image,Vector as VectorLayer,Heatmap as HeatmapLayer} from "ol/layer"
     import {OSM,ImageWMS,Vector as VectorSource} from "ol/source"
     import {Projection} from "ol/proj"
     import * as control from "ol/control"
     import 'ol/ol.css'
-    import {highlightStyle,styleVector,createLabelStyle} from "./map_style"
-    import {Point} from "ol/geom"
+    import {highlightStyle,styleVector,createLabelStyle,routeStyle,StartFeatureStyle,EndFeatureStyle} from "./map_style"
+    import {Point,LineString} from "ol/geom"
     import { GeoJSON } from 'ol/format'
     import  Overlay  from 'ol/Overlay'
 
     import geojson1 from "@/assets/data/GeoJSON_HB.json"
     import {FullScreen,ZoomSlider,ZoomToExtent} from "ol/control"
+    import Heatslider from "./heatslider";
+    import {post} from "../../network/post";
+    import RoutePlanControl from "./RoutePlanControl";
+
     export default {
         name: "mapView",
+        components: {RoutePlanControl, Heatslider},
         data(){
             return{
                 format:'image/png',
@@ -43,7 +50,16 @@
                 handPoint : false,
                 ctrPress:false,
                 ctrPoint:null,
-                overlay:null
+                overlay:null,
+                //空间分析图层
+                heatmaplayer:null,
+                heatsource:null,
+                //路径导航图层:
+                routeLayer:null,
+                routeSource:null,
+                StartFeature:null,
+                EndFeature:null,
+                routeFeature:null
             }
         },
         created() {
@@ -52,6 +68,34 @@
         mounted() {
             //页面构建完成
             this.initMap();
+
+            //监听服务总线发送的事件 , 添加热力图
+            this.$EventBus.$on("addHeatMap",()=>{
+                console.log("MapView收到事件");
+                console.log(this.heatmaplayer);
+                console.log(this.map);
+                this.map.addLayer(this.heatmaplayer)
+            });
+            this.$EventBus.$on("removeHeatMap",()=>{
+                console.log("MapView收到事件");
+
+                this.map.removeLayer(this.heatmaplayer);
+            });
+
+            //-----------------------start route ---------------------/
+            this.$EventBus.$on("routeQuery",routeArray=>{
+                console.log(routeArray);
+                this.routeFeature.setGeometry(new LineString(routeArray));
+            });
+            this.$EventBus.$on("setStartCoords",Coords=>{
+                this.StartFeature.setGeometry(new Point(Coords))
+            })
+            this.$EventBus.$on("setEndCoords",Coords=>{
+                this.EndFeature.setGeometry(new Point(Coords))
+            })
+            //-----------------------end route ---------------------//
+
+
         },
         methods:{
             initMap(){
@@ -121,6 +165,8 @@
 
                 //
                 this.HighLightFeature();
+                this.createheatMap();
+                this.createRouteMap();
             },
             createFeatureByGeoJson(geojson) {
                 //清除矢量内容
@@ -230,8 +276,82 @@
                         console.log(coord);
                     }
                 })
-            }
+            },
+            createheatMap(){
+                //初始化矢量数据源
+                this.heatsource = new VectorSource({});
+                // this.heatsource.addFeatures((new GeoJSON()).readFeatures(headmapsource));
+                // this.heatmaplayer = new HeatmapLayer({
+                //     source: this.heatsource,
+                //     blur:10,
+                //     radius:20,
+                //     weight:function (feature) {
+                //         console.log(feature)
+                //         return 10
+                //     }
+                // });
+                // this.map.addLayer(this.heatmaplayer);
+                post({
+                    url:"./DataQueryServlet",
+                    params:{
+                        QueryType:2
+                    }
+                }).then((res)=>{
+                    let geojson = JSON.parse(res.data.data.geojson);
+                    this.heatsource.addFeatures((new GeoJSON()).readFeatures(geojson));
+                    this.heatmaplayer = new HeatmapLayer({
+                        source: this.heatsource,
+                        blur:10,
+                        radius:20,
+                        weight:(feature)=> {
+                            let adclass = parseInt(feature.values_.cityclass);
+                            console.log(this.getCityWeight(adclass));
+                            return this.getCityWeight(adclass);
+                        }
+                    });
+                })
+            },
+            createRouteMap(){
+                this.routeSource = new VectorSource({});
+                this.routeLayer = new VectorLayer({
+                    source: this.routeSource,
+                });
+                this.map.addLayer(this.routeLayer);
 
+                //添加起点和终点
+                this.StartFeature = new Feature({
+                    // geometry: new Point(coordinate),  //几何信息
+                    name: "StartPoint",
+                });
+                this.StartFeature.setStyle(StartFeatureStyle);
+
+                this.EndFeature = new Feature({
+                    // geometry: new Point(coordinate),  //几何信息
+                    name: "EndPoint",
+                });
+                this.EndFeature.setStyle(EndFeatureStyle);
+
+                this.routeFeature = new Feature({
+                    name:"routeFeature"
+                })
+                this.routeFeature.setStyle(routeStyle)
+
+                this.routeSource.addFeature(this.routeFeature);
+                this.routeSource.addFeature(this.StartFeature);
+                this.routeSource.addFeature(this.EndFeature);
+
+            },
+            getCityWeight(adclass){
+                if(adclass===2){
+                    return 6
+                }else if(adclass===1){
+                    return 10
+                }else if(adclass===9){
+                    return 8
+                }else {
+                    return 4
+                }
+            }
         }
     }
 </script>

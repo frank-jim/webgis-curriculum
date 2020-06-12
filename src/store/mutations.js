@@ -14,5 +14,17 @@ export default {
     },
     CloseLoginTab(state){
         state.LoginTabShow = false;
+    },
+    CloseDataQuery(state){
+        state.DataQueryShow = false;
+    },
+    OpenDataQuery(state){
+        state.DataQueryShow = true;
+    },
+    CloseHeatMap(state){
+        state.heatMapShow = false;
+    },
+    OpenHeatMap(state){
+        state.heatMapShow = true;
     }
 }

@@ -10,7 +10,9 @@ const state = {
     GeoServer_WorkPlace:"stars",
     login:false,
     showInfo:false,
-    LoginTabShow:false
+    LoginTabShow:false,
+    DataQueryShow:false,
+    heatMapShow:false
 }
 
 const store = new Vuex.Store({

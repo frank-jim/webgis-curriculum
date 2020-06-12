@@ -2,6 +2,8 @@ import {Fill,Stroke,Icon,Style,Text} from "ol/style";
 import locate2 from "../../assets/image/locate2.png"
 import res2_4m from '../../assets/image/res2_4m.png'
 import highlight from '../../assets/image/locate_highlight.png'
+import startPoint from '../../assets/image/startPoint.png'
+import endPoint from  "../../assets/image/endPoint.png"
 //------------------------     Openlayers  style部分  --------------------------------------------------------------//
 
 
@@ -38,6 +40,13 @@ const styleVector = new Style({
     image:locateStyle
 });
 
+const routeStyle = new Style({
+    stroke:new Stroke({
+        color:"#209cec",
+        width:3
+    })
+})
+
 let highlightStyle = new Style({
     fill: new Fill({
         color: 'rgba(255,255,255,0.7)'
@@ -70,4 +79,38 @@ function createLabelStyle(feature){
     });
 }
 
-export {createLabelStyle,styleVector,highlightStyle}
+const StartFeatureStyle = new Style({
+    fill: new Fill({
+        color: 'rgba(255,255,255,0.7)'
+    }),
+    stroke: new Stroke({
+        color: '#3399CC',
+        width: 3
+    }),
+    image:new Icon({
+        anchor:[0.5,1],// 用图标的哪一点放到定位点上
+        // anchorOrigin:"top-right",// 锚点的起算位置
+        // anchorXUnits:"fraction",//锚点的x，y单位， fraction表示百分比
+        scale:0.3,
+        src:startPoint
+    })
+})
+
+const EndFeatureStyle = new Style({
+    fill: new Fill({
+        color: 'rgba(255,255,255,0.7)'
+    }),
+    stroke: new Stroke({
+        color: '#3399CC',
+        width: 3
+    }),
+    image:new Icon({
+        anchor:[0.5,1],// 用图标的哪一点放到定位点上
+        // anchorOrigin:"top-right",// 锚点的起算位置
+        // anchorXUnits:"fraction",//锚点的x，y单位， fraction表示百分比
+        scale:0.3,
+        src:endPoint
+    })
+})
+
+export {createLabelStyle,styleVector,highlightStyle,routeStyle,StartFeatureStyle,EndFeatureStyle}

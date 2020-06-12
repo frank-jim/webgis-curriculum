@@ -6,12 +6,17 @@
             <el-button style="float: right; padding: 3px 0" type="text" @click="login_btn" >{{setLoginBtn()}}</el-button>
         </div>
         <el-row type="flex" align="middle" style="height: 60px">
-            <el-col :span="10"  :offset="2">
+            <el-col :span="6">
                 <el-tooltip class="item" effect="light" :content="createTips" placement="top" >
                     <el-button type="warning"  icon="el-icon-edit" circle @click="CreateNewFeature"></el-button>
                 </el-tooltip>
             </el-col>
-            <el-col :span="13" >
+            <el-col :span="6">
+                <el-tooltip class="item" effect="light" content="点击这里查看城市的统计信息" placement="top" >
+                    <el-button type="primary"  icon="el-icon-s-data" circle @click="showStatistics"></el-button>
+                </el-tooltip>
+            </el-col>
+            <el-col :span="12">
                 <div class="user_info">
                     <div v-if="this.$store.state.login">
                         <div >{{username}}</div>
@@ -115,6 +120,9 @@
                 this.$parent.$parent.$refs['mapview'].handPoint = true;
                 this.$parent.$parent.$refs['search-view'].$refs['update'].clearInfo();
                 this.$parent.$parent.$refs['search-view'].$refs['update'].isCreateNew = true;
+            },
+            showStatistics(){
+                this.$store.commit("OpenDataQuery");
             }
         },
         mounted() {

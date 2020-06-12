@@ -31,6 +31,9 @@
             closeTab(){
                 this.$store.commit("CloseLoginTab");
             }
+        },
+        mounted() {
+
         }
     }
 </script>
