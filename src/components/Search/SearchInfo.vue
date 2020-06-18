@@ -13,13 +13,24 @@
                 <div class="line"></div>
             </el-row>
             <el-row>
+                <el-col :span="12">
+                    {{lowTemperature}}
+                </el-col>
+                <el-col :span="12">
+                    {{highTemperature}}
+                </el-col>
+            </el-row>
+            <el-row>
+                <div class="line"></div>
+            </el-row>
+            <el-row>
                 <el-col :span="3" :offset="3">
                     <el-image :src="locate_info" fit="scale-down" class="locate_img" ></el-image>
                 </el-col>
                 <el-col :span="1">X:</el-col>
                 <el-col :span="3">{{X}}</el-col>
                 <el-col :span="3" :offset="3">
-                    <el-image :src="locate_info" fit="scale-down" class="locate_img" ></el-image>
+                    <img :src="locate_info" fit="scale-down" class="locate_img" ></img>
                 </el-col>
                 <el-col :span="1">Y:</el-col>
                 <el-col :span="3">{{Y}}</el-col>
@@ -35,15 +46,18 @@
         </el-main>
         <el-footer>
             <el-row>
-                <el-col :span="10" :offset="2" style="height: 30px">
+                <el-col :span="5" :offset="2" style="height: 30px">
+                    <el-button type="text" class=" button close" @click="closeInfoDia"  > 关闭</el-button>
+                </el-col>
+                <el-col :span="6" :offset="1" style="height: 30px">
                     <el-tooltip :content="logininfo" placement="top" :disabled="this.$store.state.login" >
-                        <el-button  type="text" class="button delete" @click="deleteIdentify = true"
+                        <el-button  type="text" class="button delete" @click="befordelete"
                                     >删除
                         </el-button>
                     </el-tooltip>
 
                 </el-col>
-                <el-col :span="10" style="height: 30px">
+                <el-col :span="6" style="height: 30px">
                     <el-tooltip :content="logininfo" placement="top" :disabled="this.$store.state.login" >
                         <el-button  type="text" class="button update" @click="updateInfo"
                                      >更新</el-button>
@@ -68,7 +82,7 @@
 <script>
     import guangzhou from '../../assets/image/guangzhou.jpg'
     import locate_info from '../../assets/image/locate_info.png'
-    import {post} from "../../network/post";
+    import {post,weather} from "../../network/post";
     export default {
         name: "SearchInfo",
         data(){
@@ -82,7 +96,11 @@
                 cityImage:null,
                 pinyin:"chengshi",
                 itemInfo:"",
-                deleteIdentify:false
+                deleteIdentify:false,
+                CityWindDir:null,
+                CityWeather:null,
+                lowTemperature:null,
+                highTemperature:null
             }
         },
         computed:{
@@ -127,9 +145,9 @@
 
                 //页面跳转
                 this.$parent.$parent.$refs["mapview"].JumpToLocal(this.citycoords);
+
             },
             changeInfo(){
-                console.log(this.$parent.featureid+"++++++++++++");
                 //发送ajax请求 修改当前信息
                 post({
                     url:"./infoServlet",
@@ -144,18 +162,27 @@
                     let geojson = JSON.parse(res.data.data.geojson);
                     this.itemInfo = geojson;
                     this.createInfo(geojson);
-                    console.log(this.id);
+                    this.getWeather(this.cityname);
+                    console.log(this.cityImage);
                 })
             },
             updateInfo(){
-                // if(!this.$store.state.login){
-                //     return;
-                // }
+                if(!this.$store.state.login){
+                    return;
+                }
                 //弹窗更新
                 this.$parent.$refs['update'].dialogShow = true;
                 this.$parent.$refs['update'].setInfo(this.itemInfo);
             },
+            befordelete(){
+                if(!this.$store.state.login)
+                {
+                    return;
+                }
+                this.deleteIdentify = true
+            },
             DeleteCity(){
+
                 this.deleteIdentify = false;
                 post({
                     url:"./UpdateInfoServlet",
@@ -174,9 +201,24 @@
                         })
                     }
                 })
+            },
+            getWeather(cityname){
+                weather({
+                    url:"./weather_mini",
+                    params:{
+                        city:cityname
+                    }
+                }).then((res)=>{
+                    this.highTemperature = res.data.data.forecast[0].high;
+                    this.lowTemperature = res.data.data.forecast[0].low;
+                })
+            },
+            closeInfoDia(){
+                this.$EventBus.$emit("clearCityFeature")
+                this.$store.commit("closeCityInfo");
             }
         },
-        created() {
+        mounted() {
             //在生成之间，这里需要对信息进行填充
             this.changeInfo();
         }
@@ -224,11 +266,15 @@
     .button{
         padding: 0;
         font-size: 16px;
+        color: #1E9FFF;
     }
     .update:hover{
         color: springgreen;
     }
     .delete:hover{
+        color: red;
+    }
+    .close:hover{
         color: red;
     }
 </style>

@@ -1,7 +1,7 @@
 <template>
     <div id="searchView">
         <SearchBar @SearchInfo="getSearchInfo" ></SearchBar>
-        <SearchInfo v-if="showInfo" :id="featureid" ref="info"></SearchInfo>
+        <SearchInfo v-if="this.$store.state.showInfo" :id="featureid" ref="info"></SearchInfo>
         <UpdateInfo :visible="updateInfo" ref="update"></UpdateInfo>
     </div>
 </template>
@@ -28,11 +28,11 @@
             getSearchInfo(item){
                 //发送详细信息的搜索
                 this.featureid = parseInt(item.id);
-                if (this.showInfo){
+                if (this.$store.state.showInfo){
                     this.$refs['info'].changeInfo();
                 }
                 else {
-                    this.showInfo = true;
+                    this.$store.commit("openCityInfo");
                 }
             }
         }

@@ -1,6 +1,6 @@
 <template>
     <div v-if="this.$store.state.LoginTabShow">
-        <el-button round icon="el-icon-close" @click="closeTab"></el-button>
+        <el-button type="danger"  @click="closeTab"><i style="color: #000000" class="el-icon-close"></i></el-button>
         <el-tabs v-model="activeName" @tab-click="handleClick" type="border-card"  id="el_tabs_log" >
             <el-tab-pane label="用户登录" name="login">
                 <div style="width: 100%;margin:0 auto;text-align: center">
@@ -51,14 +51,15 @@
         text-align: center;
     }
     .el-button{
-        left: 60%;
-        top: 30%;
+        left: 62%;
+        top: 31%;
         position: absolute;
         z-index: 6;
         background-color: #f5f7fa;
-        padding: 10px;
+        padding: 8px;
+        border: #FFFFFF;
     }
     .el-button:hover{
-        background-color: #1E9FFF;
+        background-color: #ff0436;
     }
 </style>

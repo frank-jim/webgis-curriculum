@@ -12,7 +12,11 @@ const state = {
     showInfo:false,
     LoginTabShow:false,
     DataQueryShow:false,
-    heatMapShow:false
+    heatMapShow:false,
+    RouteQueryShow:false,
+    ProWeMapShow:false,
+    LoadVirusMapFirst:true,
+    VirusInfoShow:false
 }
 
 const store = new Vuex.Store({

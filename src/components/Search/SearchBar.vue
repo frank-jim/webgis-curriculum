@@ -1,6 +1,6 @@
 <template>
-    <el-autocomplete v-model="inputContent" placeholder="输出查询内容" :fetch-suggestions="querySearch"
-                     suffix-icon="el-icon-search" @select="handleSelect">
+    <el-autocomplete v-model="inputContent" placeholder="请输入当前您要查询的内容" :fetch-suggestions="querySearch"
+                     suffix-icon="el-icon-search" @select="handleSelect" @blur="clearCityMap" >
 
     </el-autocomplete>
 </template>
@@ -79,10 +79,13 @@
              * @param item 包含 value ：name id：fid
              */
             handleSelect(item){
-                console.log(this.searchResult)
-                console.log("展示搜索结果")
-                console.log(item);
                 this.$emit("SearchInfo",item);
+            },
+            clearCityMap(){
+                if(!this.$store.state.showInfo&&this.inputContent===""){
+                    console.log("清除当前内容");
+                    this.$EventBus.$emit("clearCityFeature")
+                }
             }
         }
     }

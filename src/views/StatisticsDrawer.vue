@@ -9,7 +9,7 @@
             <el-tab-pane label="城市分组查询">
                 <slot name="firstpane"> </slot>
             </el-tab-pane>
-            <el-tab-pane label="热力图">
+            <el-tab-pane label="地图相关查询">
                 <slot name="secondpane"></slot>
             </el-tab-pane>
         </el-tabs>
@@ -31,7 +31,7 @@
             },
             tabChange(tab){
                 let tabname = tab.label;
-                if(tabname==="热力图"){
+                if(tabname==="地图相关查询"){
                     this.drawerClass = "short"
                 }
                 else {

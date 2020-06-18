@@ -97,8 +97,7 @@
                     //1.进行图标展示，关闭登录注册框
                     this.$store.commit("CloseLoginTab");
                     this.$store.commit("login_in");
-                    //
-                    console.log(data.data);
+
                     this.$emit("login_success",data.data);
 
                 }
@@ -111,13 +110,12 @@
                 // 登录函数，收集信息发送ajax请求
                 post({
                     url:"./LoginServlet",
+                    params:{
+                        LoginQuery:"2"
+                    },
                     data:{
                         username:this.ruleForm.username,
                         password:this.ruleForm.password
-                    },
-                    headers:{
-                        'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
-                        'X-Requested-With': 'XMLHttpRequest'
                     },
                 }).then((res)=>{
                     //成功发送了请求后

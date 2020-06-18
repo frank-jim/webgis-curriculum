@@ -6,9 +6,13 @@ export default {
     login_out(state){
         state.login = false;
     },
-    ShowCityInfo(state,item){
-
+    closeCityInfo(state){
+        state.showInfo = false;
     },
+    openCityInfo(state){
+        state.showInfo = true;
+    }
+    ,
     ShowLoginTab(state){
         state.LoginTabShow = true
     },
@@ -26,5 +30,26 @@ export default {
     },
     OpenHeatMap(state){
         state.heatMapShow = true;
+    },
+    OpenRouteQuery(state){
+      state.RouteQueryShow = true;
+    },
+    CloseRouteQuery(state){
+        state.RouteQueryShow = false;
+    },
+    OpenProWeMap(state){
+        state.ProWeMapShow = true;
+    },
+    CloseProWeMap(state){
+        state.ProWeMapShow = false;
+    },
+    LoadVirusMapAlready(state){
+        state.LoadVirusMapFirst = false;
+    },
+    OpenVirusInfo(state){
+        state.VirusInfoShow = true;
+    },
+    CloseVirusInfo(state){
+        state.VirusInfoShow = false;
     }
 }

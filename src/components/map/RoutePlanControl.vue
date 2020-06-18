@@ -1,8 +1,13 @@
 <template>
-    <div class="route">
-        <el-row>
+    <div class="route" v-if="this.$store.state.RouteQueryShow" >
+        <el-row class="header" >
             路径规划
         </el-row>
+
+        <el-row>
+            <div class="line"></div>
+        </el-row>
+
         <el-row>
             <el-col :span="20" >
                 <el-row v-if="!startCoordsShow" style="margin-top: 0" >
@@ -14,7 +19,8 @@
                 <el-row v-else type="flex" align="middle" style="margin-top: 0">
                     <el-col :span="2" >
                         <el-tooltip content="点击这里到地图上去取点" placement="top" effect="light">
-                            <el-button circle type="success" icon="el-icon-thumb" @click="JumpToGetPoint" ></el-button>
+                            <el-button circle type="success" icon="el-icon-thumb" @click="JumpToGetPoint('start')"
+                            ></el-button>
                         </el-tooltip>
                     </el-col>
                     <el-col :span="3" style="font-family: 'Bodoni Bd BT';font-size: 20px" :offset="2">X:</el-col>
@@ -45,7 +51,9 @@
                 <el-row v-else type="flex" align="middle" style="margin-top: 0">
                     <el-col :span="2" >
                         <el-tooltip content="点击这里到地图上去取点" placement="top" effect="light">
-                            <el-button circle type="danger" icon="el-icon-thumb" @click="JumpToGetPoint" ></el-button>
+                            <el-button circle type="danger" icon="el-icon-thumb"
+                                       @click="JumpToGetPoint('end')"
+                            ></el-button>
                         </el-tooltip>
                     </el-col>
                     <el-col :span="3" style="font-family: 'Bodoni Bd BT';font-size: 20px" :offset="2">X:</el-col>
@@ -64,12 +72,16 @@
                 </el-tooltip>
             </el-col>
         </el-row>
-        <el-row style="margin-top: 40px">
-            <el-col :span="8" :offset="4">
+        <el-row style="margin-top: 20px" type="flex" align="middle">
+            <el-col :span="4">
                 <el-button icon="el-icon-caret-right" type="warning" class="calculate" @click="execute"  >开始解算</el-button>
             </el-col>
-            <el-col :span="8" :offset="2">
-                <el-button  >关闭</el-button>
+            <el-col :span="1" :offset="6" >
+                <el-button icon="el-icon-video-camera" type="success"  @click="BeginAnimation"  >路径导航
+                </el-button>
+            </el-col>
+            <el-col :span="5" :offset="8">
+                <el-button type="danger" @click="handleClose"  >关闭</el-button>
             </el-col>
         </el-row>
 
@@ -78,7 +90,7 @@
 
 <script>
     import {post} from "../../network/post";
-
+    import { Loading } from "element-ui"
     export default {
         name: "RoutePlanControl",
         data(){
@@ -91,6 +103,7 @@
                 endCoords:[0,0],
                 endSearchResult:[],
                 endInputContent:'',
+                num:0
             }
         },
         methods:{
@@ -113,6 +126,8 @@
                 if(queryString.trim()===""||queryString.trim===null)
                     return callback([]);
                 else {
+                    //异步请求，产生蒙版
+
                     //注释掉的内容实际上是在模拟网络请求
                     // clearTimeout(this.timeout);
                     // this.timeout = setTimeout(() => {
@@ -129,6 +144,7 @@
                             name:queryString
                         }
                     }).then((res)=>{
+
                         if(res.data.status===200){
                             let features = JSON.parse(res.data.data.geojson).features;
                             let result = [];
@@ -159,16 +175,20 @@
                 this.endCoords = item.feature.geometry.coordinates;
                 this.$EventBus.$emit("setEndCoords",this.endCoords);
             },
-            JumpToGetPoint(){
+            JumpToGetPoint(type){
                 this.$message({
                     message: '请按下ctr键 和鼠标 从地图上获得你需要的坐标点 ',
                     center: true,
                     type:"success"
                 });
                 // this.$parent.$parent.$refs['mapview'].handPoint = true;
+                this.$EventBus.$emit("getRoutePoint",type)
             },
-            HandleCoords(coords){
-
+            handleClose(){
+                this.clearQueryInfo();
+                this.$store.commit("CloseRouteQuery");
+                this.$store.commit("OpenDataQuery");
+                this.$EventBus.$emit("clearRouteLayer")
             },
             execute(){
                 if(this.startCoords.toString()===[0,0].toString()||this.endCoords.toString()===[0,0].toString()){
@@ -180,6 +200,12 @@
                     return;
                 }
                 else {
+                    this.num++;
+                    let loadinstance = Loading.service({
+                        lock:true,
+                        text:"正在解算路径请稍等",
+                        body:document
+                    });
                     post({
                         url:"./DataQueryServlet",
                         params:{
@@ -190,14 +216,40 @@
                             endPoint:this.endCoords
                         }
                     }).then(res=>{
+                        loadinstance.close();
                         let routeArray = JSON.parse(res.data.data.geojson).coordinates;
+                        console.log(JSON.parse(res.data.data.geojson));
                         //发送数据到mapView绑定地图导航要素
                         //直接传递坐标点数据
                         this.$EventBus.$emit("routeQuery",routeArray)
-                        console.log(res);
                     })
                 }
             },
+            BeginAnimation(){
+                this.$EventBus.$emit("BeginRouteAnimation")
+            },
+            clearQueryInfo(){
+                this.startCoordsShow = false;
+                this.startCoords = [0,0];
+                this.startSearchResult = [];
+                this.startInputContent = '';
+                this.endCoordsShow = false;
+                this.endCoords = [0,0];
+                this.endSearchResult = [];
+                this.endInputContent = '' ;
+                this.num = 0;
+            }
+        },
+        mounted() {
+            this.$EventBus.$on("returnRoutePoint",res=>{
+                if (res.type==="start"){
+                    this.startCoords = res.coords;
+                }else if(res.type==="end"){
+                    this.endCoords = res.coords;
+                }
+            });
+            //清除所有内容
+            this.clearQueryInfo();
         }
     }
 </script>
@@ -206,12 +258,13 @@
 .route{
     position: absolute;
     width: 360px;
-    left: 72%;
-    top: 20%;
+    left: 5%;
+    top: 15%;
     z-index: 8;
     opacity: 90%;
     padding: 10px;
     border-radius: 30px;
+    background-color: #dfe4ed;
 }
     .el-row{
         margin-top: 20px;
@@ -220,4 +273,15 @@
         font-family: 幼圆;
         font-size: medium;
     }
+    .header{
+        width: 100%;
+        text-align: center;
+        color: #1E9FFF;
+        font-size: 20px;
+    }
+.line{
+    width: 100%;
+    height: 3px;
+    border-top: solid #242424 1px;
+}
 </style>

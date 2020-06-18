@@ -1,12 +1,12 @@
 <template>
     <div class="heatslider" v-if="this.$store.state.heatMapShow">
-        <el-button type="warning" round @click="closeHeatMap"
-                   style="margin-left: 13%;margin-bottom: 10%">
+        <el-button type="text" round @click="closeHeatMap"
+                   style="margin-left: 7%;margin-bottom: 10%;color: #FFB800;font-size: 13pt">
             关闭热力图
         </el-button>
         <el-row >
             <el-col :span="9" :offset="4">
-                <el-row style="margin-bottom: 15px"> blur </el-row>
+                <el-row style="margin-bottom: 15px;font-family: 'Bodoni Bd BT';font-size: 15pt"> blur </el-row>
                 <el-row>
                     <el-slider v-model="blur" vertical height="300px" :min="1" :max="50" @input="blurChange">
 
@@ -14,7 +14,7 @@
                 </el-row>
             </el-col>
             <el-col :span="9">
-                <el-row style="margin-bottom: 15px">radius</el-row>
+                <el-row style="margin-bottom: 15px;font-family: 'Bodoni Bd BT';font-size: 15pt">radius</el-row>
                 <el-row>
                     <el-slider v-model="radius" vertical height="300px" :min="1" :max="50" @input="radiusChange">
 
